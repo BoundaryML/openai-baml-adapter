@@ -6,6 +6,7 @@ from typing import List, Any, Optional, Dict
 
 from openai import AsyncOpenAI
 from ..baml_client.baml_client.sync_client import b
+from ..baml_client.baml_client.types import Message
 from ..baml_client.baml_client.type_builder import TypeBuilder
 from ..models.openai import (
     CompletionRequest, 
@@ -98,7 +99,10 @@ async def handle_openai_request(request: CompletionRequest, headers: Dict[str, s
         tb.Response.add_property("tool_call", tb.list(tb.union(tool_types)))
     
     # Call BAML function with empty string
-    baml_response = b.BamlFunction("Greet Greg and greet Aaron", baml_options={"tb": tb})
+    test_messages = [
+        Message(role="user", content="Greet Greg and greet Aaron"),
+    ]
+    baml_response = b.BamlFunction(test_messages, baml_options={"tb": tb})
     
     # Process BAML response and convert to OpenAI format
     message = Message(role="assistant", content=None)

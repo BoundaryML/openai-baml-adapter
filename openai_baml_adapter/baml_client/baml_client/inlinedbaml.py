@@ -13,7 +13,7 @@
 _file_map = {
 
     "clients.baml": "client<llm> GPT4oMini {\n  provider openai\n  options {\n    model \"gpt-4o-mini\"\n    api_key env.OPENAI_API_KEY\n  }\n}",
-    "function.baml": "class Response {\n  @@dynamic\n}\n\nfunction BamlFunction(prompt: string) -> Response {\n  client GPT4oMini\n  prompt #\"\n    {{ prompt }}\n\n    {{ctx.output_format}}\n  \"#\n}\n\ntest Test {\n  functions [BamlFunction]\n  type_builder {\n    class Greet {\n      greeting string\n    }\n    class Depart {\n      departure_time string\n      message string\n    }\n    dynamic class Response {\n      tool_call Greet | Depart\n    }\n  }\n\n  args {\n    prompt #\"Greet me? My name is Greg\"#\n  }\n}",
+    "function.baml": "class Response {\n  @@dynamic\n}\n\nclass Message {\n  role string\n  content string\n}\n\nfunction BamlFunction(messages: Message[]) -> Response {\n  client GPT4oMini\n  prompt #\"\n    {% for message in messages %}\n    {{ _.role(message.role) }}\n    {{ message.content }}\n    {% endfor %}\n\n    {{ _.role(\"system\") }}\n    {{ctx.output_format}}\n  \"#\n}\n\ntest Test {\n  functions [BamlFunction]\n  type_builder {\n    class Greet {\n      greeting string\n    }\n    class Depart {\n      departure_time string\n      message string\n    }\n    dynamic class Response {\n      tool_call Greet | Depart\n    }\n  }\n\n  args {\n    prompt #\"Greet me? My name is Greg\"#\n  }\n}",
     "generators.baml": "generator target {\n    output_type \"python/pydantic\"\n    output_dir \"../baml_client\"\n    version \"0.202.1\"\n    default_client_mode sync\n}\n",
 }
 

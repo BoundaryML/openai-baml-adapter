@@ -16,6 +16,9 @@ from . import stream_types
 
 type_map = {
 
+    "types.Message": types.Message,
+    "stream_types.Message": stream_types.Message,
+
     "types.Response": types.Response,
     "stream_types.Response": stream_types.Response,
 

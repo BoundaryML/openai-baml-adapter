@@ -41,8 +41,12 @@ def all_succeeded(checks: typing.Dict[CheckName, Check]) -> bool:
 # #########################################################################
 
 # #########################################################################
-# Generated classes (1)
+# Generated classes (2)
 # #########################################################################
+
+class Message(BaseModel):
+    role: str
+    content: str
 
 class Response(BaseModel):
     model_config = ConfigDict(extra='allow')

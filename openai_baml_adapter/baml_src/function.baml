@@ -2,11 +2,20 @@ class Response {
   @@dynamic
 }
 
-function BamlFunction(prompt: string) -> Response {
+class Message {
+  role string
+  content string
+}
+
+function BamlFunction(messages: Message[]) -> Response {
   client GPT4oMini
   prompt #"
-    {{ prompt }}
+    {% for message in messages %}
+    {{ _.role(message.role) }}
+    {{ message.content }}
+    {% endfor %}
 
+    {{ _.role("system") }}
     {{ctx.output_format}}
   "#
 }
