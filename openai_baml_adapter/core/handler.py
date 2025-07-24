@@ -1,3 +1,4 @@
+import json
 import os
 import time
 import uuid
@@ -98,10 +99,75 @@ async def handle_openai_request(request: CompletionRequest, headers: Dict[str, s
     
     # Call BAML function with empty string
     baml_response = b.BamlFunction("", baml_options={"tb": tb})
-    print(baml_response)
     
-    # TODO: Process BAML response and convert to OpenAI format
-    raise NotImplementedError("BAML response processing not implemented yet")
+    # Process BAML response and convert to OpenAI format
+    message = Message(role="assistant", content=None)
+    
+    # Debug print to see the actual response structure
+    print(f"BAML response type: {type(baml_response)}")
+    print(f"BAML response: {baml_response}")
+    
+    # Check if BAML response is a dict or has tool_call attribute
+    tool_call_data = None
+    if isinstance(baml_response, dict) and "tool_call" in baml_response:
+        tool_call_data = baml_response["tool_call"]
+    elif hasattr(baml_response, "tool_call"):
+        tool_call_data = baml_response.tool_call
+    
+    if tool_call_data:
+        # Handle both dict and object cases
+        if isinstance(tool_call_data, dict):
+            function_name = tool_call_data.get("function_name")
+            # Create args dict without function_name
+            args_dict = {k: v for k, v in tool_call_data.items() if k != "function_name"}
+        else:
+            # Object case
+            function_name = getattr(tool_call_data, "function_name", None)
+            args_dict = {}
+            for field_name in dir(tool_call_data):
+                if not field_name.startswith("_") and field_name != "function_name":
+                    value = getattr(tool_call_data, field_name)
+                    if value is not None:
+                        args_dict[field_name] = value
+        
+        if function_name:
+            # Create the tool call
+            message.tool_calls = [
+                ToolCall(
+                    id=f"call_{uuid.uuid4().hex[:8]}",
+                    type="function",
+                    function=FunctionCall(
+                        name=function_name,
+                        arguments=json.dumps(args_dict)
+                    )
+                )
+            ]
+        else:
+            # No function name found, return a regular message
+            message.content = "No tool was called"
+    else:
+        # No tool_call in response
+        message.content = "No tool was called"
+    
+    # Create the OpenAI response
+    return CompletionResponse(
+        id=f"chatcmpl-{uuid.uuid4().hex}",
+        object="chat.completion",
+        created=int(time.time()),
+        model=request.model,
+        choices=[
+            Choice(
+                index=0,
+                message=message,
+                finish_reason="tool_calls" if message.tool_calls else "stop"
+            )
+        ],
+        usage=Usage(
+            prompt_tokens=100,  # TODO: Get actual token counts from BAML
+            completion_tokens=50,
+            total_tokens=150
+        )
+    )
 
 
 def convert_messages_to_baml(messages: List[Message]) -> str:

@@ -192,14 +192,25 @@ def test_chat_completions_baml_path():
     # Make the request without PASSTHROUGH header
     response = client.post("/v1/chat/completions", json=request_data)
     
-    # Print the full response for debugging
-    if response.status_code != 501:
-        print(f"Unexpected status code: {response.status_code}")
-        print(f"Response: {response.json()}")
+    # Verify response
+    assert response.status_code == 200
     
-    # Currently expecting 501 Not Implemented
-    assert response.status_code == 501
-    assert "BAML response processing not implemented yet" in response.json()["detail"]
+    response_data = response.json()
+    assert response_data["object"] == "chat.completion"
+    assert "id" in response_data
+    assert "created" in response_data
+    assert "model" in response_data
+    assert "choices" in response_data
+    assert len(response_data["choices"]) > 0
+    
+    # Check the first choice
+    choice = response_data["choices"][0]
+    assert "message" in choice
+    assert choice["message"]["role"] == "assistant"
+    
+    # Should have either tool_calls or content
+    message = choice["message"]
+    assert "tool_calls" in message or "content" in message
 
 
 @pytest.mark.skipif(not os.getenv("OPENAI_API_KEY"), reason="OPENAI_API_KEY not set")
