@@ -1,0 +1,34 @@
+import time
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
+from ..models.openai import CompletionRequest, CompletionResponse, Choice, Message, Usage
+from ..core.handler import handle_openai_request
+
+app = FastAPI(title="OpenAI BAML Adapter", version="0.1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
+
+@app.post("/v1/chat/completions", response_model=CompletionResponse)
+async def create_chat_completion(request: CompletionRequest):
+    """
+    Handle OpenAI-compatible chat completion requests with tool calling support.
+    """
+    try:
+        # Stub implementation - replace with actual BAML processing
+        response = await handle_openai_request(request)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
