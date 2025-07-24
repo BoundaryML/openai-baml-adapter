@@ -1,5 +1,5 @@
 import time
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from ..models.openai import CompletionRequest, CompletionResponse, Choice, Message, Usage
@@ -22,13 +22,16 @@ async def health_check():
 
 
 @app.post("/v1/chat/completions", response_model=CompletionResponse)
-async def create_chat_completion(request: CompletionRequest):
+async def create_chat_completion(request: CompletionRequest, http_request: Request):
     """
     Handle OpenAI-compatible chat completion requests with tool calling support.
     """
     try:
-        # Stub implementation - replace with actual BAML processing
-        response = await handle_openai_request(request)
+        # Extract headers and pass to handler
+        headers = dict(http_request.headers)
+        response = await handle_openai_request(request, headers)
         return response
+    except NotImplementedError as e:
+        raise HTTPException(status_code=501, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
