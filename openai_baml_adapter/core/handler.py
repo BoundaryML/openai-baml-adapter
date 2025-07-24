@@ -4,7 +4,8 @@ import uuid
 from typing import List, Any, Optional, Dict
 
 from openai import AsyncOpenAI
-from ..baml_client.baml_client.sync_client import BamlSyncClient
+from ..baml_client.baml_client.sync_client import b
+from ..baml_client.baml_client.type_builder import TypeBuilder
 from ..models.openai import (
     CompletionRequest, 
     CompletionResponse, 
@@ -77,8 +78,27 @@ async def handle_openai_request(request: CompletionRequest, headers: Dict[str, s
             ) if openai_response.usage else None
         )
     
-    # BAML processing not implemented
-    raise NotImplementedError("baml proxy not implemented")
+    # BAML processing
+    # Initialize BAML client
+    baml_client = BamlSyncClient()
+    
+    tb = TypeBuilder()
+    # Convert Tool objects to dicts for parse_openai_tools
+    tools_dict = [tool.model_dump() for tool in request.tools] if request.tools else []
+    parsed_tools = parse_openai_tools(tools_dict, tb)
+    
+    # Extract just the FieldType objects from the parsed tools
+    tool_types = [field_type for field_type, _ in parsed_tools.values()]
+    
+    # Create union of tool types if any exist
+    if tool_types:
+        tb.Response.add_property("tool_call", tb.union(tool_types))
+    
+    # Call BAML function with empty string
+    baml_response = baml_client.BamlFunction("", { tb: tb })
+    
+    # TODO: Process BAML response and convert to OpenAI format
+    raise NotImplementedError("BAML response processing not implemented yet")
 
 
 def convert_messages_to_baml(messages: List[Message]) -> str:
