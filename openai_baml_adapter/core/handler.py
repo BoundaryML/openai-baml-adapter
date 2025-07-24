@@ -95,7 +95,7 @@ async def handle_openai_request(request: CompletionRequest, headers: Dict[str, s
     
     # Create union of tool types if any exist
     if tool_types:
-        tb.Response.add_property("tool_call", tb.union(tool_types))
+        tb.Response.add_property("tool_call", tb.list(tb.union(tool_types)))
     
     # Call BAML function with empty string
     baml_response = b.BamlFunction("", baml_options={"tb": tb})
@@ -107,43 +107,52 @@ async def handle_openai_request(request: CompletionRequest, headers: Dict[str, s
     print(f"BAML response type: {type(baml_response)}")
     print(f"BAML response: {baml_response}")
     
-    # Check if BAML response is a dict or has tool_call attribute
-    tool_call_data = None
+    # Check if BAML response has tool_call attribute (now expecting a list)
+    tool_calls_data = None
     if isinstance(baml_response, dict) and "tool_call" in baml_response:
-        tool_call_data = baml_response["tool_call"]
+        tool_calls_data = baml_response["tool_call"]
     elif hasattr(baml_response, "tool_call"):
-        tool_call_data = baml_response.tool_call
+        tool_calls_data = baml_response.tool_call
     
-    if tool_call_data:
-        # Handle both dict and object cases
-        if isinstance(tool_call_data, dict):
-            function_name = tool_call_data.get("function_name")
-            # Create args dict without function_name
-            args_dict = {k: v for k, v in tool_call_data.items() if k != "function_name"}
-        else:
-            # Object case
-            function_name = getattr(tool_call_data, "function_name", None)
-            args_dict = {}
-            for field_name in dir(tool_call_data):
-                if not field_name.startswith("_") and field_name != "function_name":
-                    value = getattr(tool_call_data, field_name)
-                    if value is not None:
-                        args_dict[field_name] = value
+    if tool_calls_data:
+        # Ensure it's a list
+        if not isinstance(tool_calls_data, list):
+            tool_calls_data = [tool_calls_data]
         
-        if function_name:
-            # Create the tool call
-            message.tool_calls = [
-                ToolCall(
-                    id=f"call_{uuid.uuid4().hex[:8]}",
-                    type="function",
-                    function=FunctionCall(
-                        name=function_name,
-                        arguments=json.dumps(args_dict)
+        openai_tool_calls = []
+        
+        for tool_call in tool_calls_data:
+            # Handle both dict and object cases
+            if isinstance(tool_call, dict):
+                function_name = tool_call.get("function_name")
+                # Create args dict without function_name
+                args_dict = {k: v for k, v in tool_call.items() if k != "function_name"}
+            else:
+                # Object case
+                function_name = getattr(tool_call, "function_name", None)
+                args_dict = {}
+                for field_name in dir(tool_call):
+                    if not field_name.startswith("_") and field_name != "function_name":
+                        value = getattr(tool_call, field_name)
+                        if value is not None:
+                            args_dict[field_name] = value
+            
+            if function_name:
+                openai_tool_calls.append(
+                    ToolCall(
+                        id=f"call_{uuid.uuid4().hex[:8]}",
+                        type="function",
+                        function=FunctionCall(
+                            name=function_name,
+                            arguments=json.dumps(args_dict)
+                        )
                     )
                 )
-            ]
+        
+        if openai_tool_calls:
+            message.tool_calls = openai_tool_calls
         else:
-            # No function name found, return a regular message
+            # No valid tool calls found
             message.content = "No tool was called"
     else:
         # No tool_call in response
