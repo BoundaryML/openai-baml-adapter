@@ -98,7 +98,7 @@ async def handle_openai_request(request: CompletionRequest, headers: Dict[str, s
         tb.Response.add_property("tool_call", tb.list(tb.union(tool_types)))
     
     # Call BAML function with empty string
-    baml_response = b.BamlFunction("", baml_options={"tb": tb})
+    baml_response = b.BamlFunction("Greet Greg and greet Aaron", baml_options={"tb": tb})
     
     # Process BAML response and convert to OpenAI format
     message = Message(role="assistant", content=None)
