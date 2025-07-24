@@ -25,6 +25,7 @@ test Test {
       tool_call Greet | Depart
     }
   }
+
   args {
     prompt #"Greet me? My name is Greg"#
   }

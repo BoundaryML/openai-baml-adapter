@@ -2,7 +2,7 @@ import time
 import uuid
 from typing import List, Any
 
-from baml_client import BamlSyncClient
+from ..baml_client.baml_client.sync_client import BamlSyncClient
 from ..models.openai import (
     CompletionRequest, 
     CompletionResponse, 

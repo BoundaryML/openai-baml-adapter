@@ -1,7 +1,7 @@
 import warnings
 import json
 from typing import Any, Dict
-from baml_client.type_builder import TypeBuilder
+from ..baml_client.baml_client.type_builder import TypeBuilder
 from baml_py.baml_py import FieldType
 
 TOOL_NAME_KEY = "function_name"
