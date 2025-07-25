@@ -201,19 +201,65 @@ async def handle_openai_request(request: CompletionRequest, headers: Dict[str, s
     )
 
 
-def convert_messages_to_baml(messages: List[Message]) -> str:
-    """
-    Convert OpenAI messages to BAML prompt format.
-    
-    TODO: Implement actual conversion logic
-    """
-    pass
+
+def _create_client_registry(self, **kwargs) -> ClientRegistry:
+        """Create BAML client with auto-detected provider."""
+        cr = ClientRegistry()
+        provider, provider_options = detect_baml_provider(
+            self.original_model_name, self.base_url
+        )
+
+        # Get API key based on provider
+        api_key = self._get_api_key(provider)
+
+        # Merge provider options with common options
+        options = {
+            "model": self.original_model_name,  # Use original model name for API calls
+            "api_key": api_key,
+            "temperature": self.temperature,
+            **provider_options,
+            **kwargs,  # Allow override of any options
+        }
+
+        cr.add_llm_client(name="DynamicClient", provider=provider, options=options)
+        cr.set_primary("DynamicClient")
+        return cr
 
 
-def convert_baml_to_openai_response(baml_response: Any) -> Message:
-    """
-    Convert BAML response to OpenAI message format.
+def detect_baml_provider(model_name: str, base_url: Optional[str] = None) -> tuple[str, dict]:
+    """Auto-detect BAML provider and return (provider, options)."""
+    model_lower = model_name.lower()
     
-    TODO: Implement actual conversion logic
-    """
-    pass
+    # Simple prefix detection
+    if model_lower.startswith(('gpt-', 'o1-')):
+        return 'openai', {}
+    elif model_lower.startswith('o3-'):
+        return 'openai-responses', {}
+    elif model_lower.startswith('claude-'):
+        return 'anthropic', {}
+    elif model_lower.startswith(('gemini-', 'models/gemini-')):
+        return 'google-ai', {}
+    elif model_lower.startswith('bedrock/'):
+        return 'aws-bedrock', {}
+    elif model_lower.startswith('azure/'):
+        return 'azure-openai', {}
+    else:
+        # Default to openai-generic with base_url
+        if not base_url:
+            # Try to infer base_url from known providers
+            if 'llama' in model_lower:
+                base_url = 'https://llama-api.meta.com/compat/v1'
+            elif 'mistral' in model_lower:
+                base_url = 'https://api.mistral.ai/v1'
+            elif 'deepseek' in model_lower:
+                base_url = 'https://api.deepseek.com/v1'
+            elif 'qwen' in model_lower:
+                base_url = 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+            else:
+                raise ValueError(
+                    f"Cannot auto-detect provider for model '{model_name}'. "
+                    f"BAML supports: OpenAI, Anthropic, Google AI, AWS Bedrock, "
+                    f"Azure OpenAI, and OpenAI-compatible APIs."
+                )
+        
+        return 'openai-generic', {'base_url': base_url}
