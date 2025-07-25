@@ -147,8 +147,8 @@ async def handle_openai_request(request: CompletionRequest, headers: Dict[str, s
             # Handle both dict and object cases
             if isinstance(tool_call, dict):
                 function_name = tool_call.get("function_name")
-                # Create args dict without function_name
-                args_dict = {k: v for k, v in tool_call.items() if k != "function_name"}
+                # Create args dict without function_name and without null values
+                args_dict = {k: v for k, v in tool_call.items() if k != "function_name" and v is not None}
             else:
                 # Object case
                 function_name = getattr(tool_call, "function_name", None)
