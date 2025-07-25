@@ -11,4 +11,4 @@ FROM python:3.12-slim
 WORKDIR /app
 COPY --from=builder /app/.venv .venv/
 COPY . .
-CMD [".venv/bin/fastapi", "run", "server.py"]
+CMD [".venv/bin/fastapi", "run", "server.py", "--workers", "4"]

@@ -1,3 +1,4 @@
+from baml_py import ClientRegistry
 import json
 import os
 import time
@@ -5,7 +6,7 @@ import uuid
 from typing import List, Any, Optional, Dict
 
 from openai import AsyncOpenAI
-from ..baml_client.baml_client.sync_client import b
+from ..baml_client.baml_client.async_client import b
 from ..baml_client.baml_client.types import Message as BamlMessage
 from ..baml_client.baml_client.type_builder import TypeBuilder
 from ..models.openai import (
@@ -35,6 +36,9 @@ async def handle_openai_request(request: CompletionRequest, headers: Dict[str, s
         OpenAI completion response
     """
     # Check for PASSTHROUGH header
+
+    # print(request)
+
     passthrough = headers.get("passthrough", headers.get("PASSTHROUGH", ""))
     
     if passthrough and passthrough.lower() not in ["false", "0", ""]:
@@ -82,6 +86,17 @@ async def handle_openai_request(request: CompletionRequest, headers: Dict[str, s
     
     # BAML processing
     # Initialize BAML client
+
+    # cr = ClientRegistry()
+    # api_key = headers.get("Authorization", "").split(" ")[1]
+    # cr.add_llm_client(name="RequestModel", provider="openai", options={
+    #     "model": request.model,
+    #     "api_key": api_key
+    # })
+    
+    # client = cr.get_llm_client("RequestModel")
+    # response = client.generate(request.messages)
+    # print(response)
     
     tb = TypeBuilder()
     # Convert Tool objects to dicts for parse_openai_tools
@@ -105,7 +120,7 @@ async def handle_openai_request(request: CompletionRequest, headers: Dict[str, s
         baml_messages.append(BamlMessage(role=msg.role, content=msg.content or ""))
     
     # Call BAML function with the converted messages
-    baml_response = b.BamlFunction(baml_messages, baml_options={"tb": tb})
+    baml_response = await b.BamlFunction(baml_messages, True, baml_options={"tb": tb})
     
     # Process BAML response and convert to OpenAI format
     message = Message(role="assistant", content=None)

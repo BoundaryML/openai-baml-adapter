@@ -28,7 +28,22 @@ async def create_chat_completion(request: CompletionRequest, http_request: Reque
     """
     try:
         # Extract headers and pass to handler
+        print("REQUEST")
         headers = dict(http_request.headers)
+
+        # Pretty-print the request
+        # print(f"Method: {http_request.method}")
+        # print(f"URL: {http_request.url}")
+        # print(f"Path: {http_request.url.path}")
+        # print(f"Query params: {http_request.query_params}")
+        # print(f"Headers: {dict(http_request.headers)}")
+        # if http_request.method in ["POST", "PUT", "PATCH"]:
+        #     body_bytes = await http_request.body()
+        #     try:
+        #         body = body_bytes.decode('utf-8') if body_bytes else None
+        #     except UnicodeDecodeError:
+        #         body = f"<binary data: {len(body_bytes)} bytes>"
+
         response = await handle_openai_request(request, headers)
         return response
     except NotImplementedError as e:

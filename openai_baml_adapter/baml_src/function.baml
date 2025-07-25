@@ -7,7 +7,7 @@ class Message {
   content string
 }
 
-function BamlFunction(messages: Message[]) -> Response {
+function BamlFunction(messages: Message[], parallel: bool) -> Response {
   client GPT4oMini
   prompt #"
     {% for message in messages %}
@@ -16,7 +16,11 @@ function BamlFunction(messages: Message[]) -> Response {
     {% endfor %}
 
     {{ _.role("system") }}
-    {{ctx.output_format}}
+    {% if parallel %}
+      {{ctx.output_format(prefix="Answer in this schema, but choose the best tools to answer the question:")}}
+    {% else %}
+     {{ctx.output_format(prefix="Answer in this schema, but choose the best single tool to answer the question:")}}
+    {% endif %}
   "#
 }
 

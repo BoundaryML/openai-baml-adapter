@@ -73,11 +73,11 @@ class BamlAsyncClient:
     def parse_stream(self):
       return self.__llm_stream_parser
     
-    async def BamlFunction(self, messages: typing.List["types.Message"],
+    async def BamlFunction(self, messages: typing.List["types.Message"],parallel: bool,
         baml_options: BamlCallOptions = {},
     ) -> types.Response:
         result = await self.__options.merge_options(baml_options).call_function_async(function_name="BamlFunction", args={
-            "messages": messages,
+            "messages": messages,"parallel": parallel,
         })
         return typing.cast(types.Response, result.cast_to(types, types, stream_types, False, __runtime__))
     
@@ -89,11 +89,11 @@ class BamlStreamClient:
     def __init__(self, options: DoNotUseDirectlyCallManager):
         self.__options = options
 
-    def BamlFunction(self, messages: typing.List["types.Message"],
+    def BamlFunction(self, messages: typing.List["types.Message"],parallel: bool,
         baml_options: BamlCallOptions = {},
     ) -> baml_py.BamlStream[stream_types.Response, types.Response]:
         ctx, result = self.__options.merge_options(baml_options).create_async_stream(function_name="BamlFunction", args={
-            "messages": messages,
+            "messages": messages,"parallel": parallel,
         })
         return baml_py.BamlStream[stream_types.Response, types.Response](
           result,
@@ -109,11 +109,11 @@ class BamlHttpRequestClient:
     def __init__(self, options: DoNotUseDirectlyCallManager):
         self.__options = options
 
-    async def BamlFunction(self, messages: typing.List["types.Message"],
+    async def BamlFunction(self, messages: typing.List["types.Message"],parallel: bool,
         baml_options: BamlCallOptions = {},
     ) -> baml_py.baml_py.HTTPRequest:
         result = await self.__options.merge_options(baml_options).create_http_request_async(function_name="BamlFunction", args={
-            "messages": messages,
+            "messages": messages,"parallel": parallel,
         }, mode="request")
         return result
     
@@ -124,11 +124,11 @@ class BamlHttpStreamRequestClient:
     def __init__(self, options: DoNotUseDirectlyCallManager):
         self.__options = options
 
-    async def BamlFunction(self, messages: typing.List["types.Message"],
+    async def BamlFunction(self, messages: typing.List["types.Message"],parallel: bool,
         baml_options: BamlCallOptions = {},
     ) -> baml_py.baml_py.HTTPRequest:
         result = await self.__options.merge_options(baml_options).create_http_request_async(function_name="BamlFunction", args={
-            "messages": messages,
+            "messages": messages,"parallel": parallel,
         }, mode="stream")
         return result
     

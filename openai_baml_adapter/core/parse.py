@@ -27,7 +27,10 @@ class SchemaAdder:
             assert isinstance(properties, dict)
             tool_name_key = properties.pop(TOOL_NAME_KEY, None)
             if tool_name_key is not None:
-                new_cls.add_property(TOOL_NAME_KEY, self.parse(tool_name_key)).alias(TOOL_NAME_LLM_FIELD)
+                if description := tool_name_key.get("description"):
+                    new_cls.add_property(TOOL_NAME_KEY, self.parse(tool_name_key)).alias(TOOL_NAME_LLM_FIELD).description(description)
+                else:
+                    new_cls.add_property(TOOL_NAME_KEY, self.parse(tool_name_key)).alias(TOOL_NAME_LLM_FIELD)
 
 
             for field_name, field_schema in properties.items():
@@ -165,6 +168,8 @@ def parse_openai_tools(tools_info: list, tb: TypeBuilder) -> Dict[str, tuple[Fie
         tool_name = function.get("name")
         if not tool_name:
             continue
+
+        function_description = function.get("description", None)
             
         # Extract the parameters schema
         parameters = function.get("parameters", {})
