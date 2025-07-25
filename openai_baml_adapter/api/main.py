@@ -44,7 +44,7 @@ async def create_chat_completion(request: CompletionRequest, http_request: Reque
         #     except UnicodeDecodeError:
         #         body = f"<binary data: {len(body_bytes)} bytes>"
 
-        response = await handle_openai_request(request, headers)
+        response = await handle_openai_request(request, http_request.base_url, headers)
         return response
     except NotImplementedError as e:
         raise HTTPException(status_code=501, detail=str(e))
